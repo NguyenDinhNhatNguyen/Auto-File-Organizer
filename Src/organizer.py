@@ -25,7 +25,7 @@ class FileMover:
     def get_unique_name(self, destination, filename):
       
         # Nếu file bị trùng tên, tự động thêm số đếm.
-        # Ví dụ: a.jpg -> a(1).jpg -> a(2).jpg
+        # Ví dụ: a.jpg -> a(1).jpg -> a(2).jpg -> a(3).jpg
    
         name, ext = os.path.splitext(filename)
         counter = 1

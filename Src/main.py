@@ -27,7 +27,7 @@ class Handler(FileSystemEventHandler):
         if filename.endswith(ignore_exts):
             return
 
-        # 2. Delay nhẹ để đảm bảo file đã tải xong. Quan trọng: với các file nặng
+        # 2. Delay nhẹ để đảm bảo file đã tải xong => Quan trọng: với các file nặng
         # Với file quét cũ thì không cần delay, nhưng để chung cho an toàn
         time.sleep(1) 
         
