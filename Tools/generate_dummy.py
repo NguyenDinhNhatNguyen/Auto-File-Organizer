@@ -4,7 +4,7 @@ import time
 
 # Đường dẫn đến folder TestZone
 TEST_DIR = "TestZone"
-EXTENSIONS = ['.jpg', '.png', '.docx', '.txt', '.pdf', '.exe', '.zip', '.mp4', '.mp3', '.sql', 'py', '.spv', '.pdsprj', '.c']
+EXTENSIONS = ['.jpg', '.png', '.docx', '.txt', '.pdf', '.exe', '.zip', '.mp4', '.mp3', '.sql', '.py', '.spv', '.pdsprj', '.c']
 
 def create_dummy_files():
     if not os.path.exists(TEST_DIR):

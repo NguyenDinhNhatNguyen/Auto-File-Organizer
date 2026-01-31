@@ -1,67 +1,68 @@
 import os
 import shutil
-import logging
-from datetime import datetime
-
-# 1. Cấu hình ánh xạ đuôi file
-FILE_CATEGORIES = {
-    'Images': ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.bmp'],
-    'Documents': ['.pdf', '.docx', '.txt', '.xlsx', '.pptx', '.doc'],
-    'SetupFiles': ['.exe', '.msi', '.apk', '.dmg', '.iso'],
-    'Archives': ['.zip', '.rar', '.7z', '.tar', '.gz'],
-    'Videos': ['.mp4', '.avi', '.mkv', '.mov'],
-    'Music': ['.mp3', '.wav', '.flac']
-}
 
 class FileMover:
-    def __init__(self, source_dir):
-        self.source_dir = source_dir
-        # Tạo folder logs nếu chưa có
-        if not os.path.exists('logs'):
-            os.makedirs('logs')
+    def __init__(self, base_dir):
+        self.base_dir = base_dir
+        # Định nghĩa các thư mục và đuôi file tương ứng
+        self.folders = {
+            "Images": ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.heic'],
+            "Documents": ['.pdf', '.docx', '.doc', '.txt', '.xlsx', '.xls', '.pptx', '.csv'],
+            "Videos": ['.mp4', '.mov', '.avi', '.mkv', '.flv'],
+            "Music": ['.mp3', '.wav', '.flac', '.aac'],
+            "Archives": ['.zip', '.rar', '.7z', '.tar', '.gz'],
+            "Software": ['.exe', '.msi', '.apk', '.iso']
+        }
+        self.create_folders()
+
+    def create_folders(self):
+        # Tạo các thư mục đích nếu chưa có
+        for folder in self.folders:
+            folder_path = os.path.join(self.base_dir, folder)
+            if not os.path.exists(folder_path):
+                os.makedirs(folder_path)
+
+    def get_unique_name(self, destination, filename):
+      
+        # Nếu file bị trùng tên, tự động thêm số đếm.
+        # Ví dụ: a.jpg -> a(1).jpg -> a(2).jpg
+   
+        name, ext = os.path.splitext(filename)
+        counter = 1
+        new_filename = filename
+        
+        # Vòng lặp kiểm tra: Nếu tên file đã tồn tại thì thêm số và kiểm tra tiếp
+        while os.path.exists(os.path.join(destination, new_filename)):
+            new_filename = f"{name}({counter}){ext}"
+            counter += 1
             
-        # Cấu hình ghi log
-        logging.basicConfig(filename='logs/organization.log', 
-                            level=logging.INFO, 
-                            format='%(asctime)s - %(message)s',
-                            datefmt='%Y-%m-%d %H:%M:%S')
+        return new_filename
 
     def move_file(self, file_path):
+        # Hàm chính để di chuyển file
         filename = os.path.basename(file_path)
         name, ext = os.path.splitext(filename)
-        
-        # Bỏ qua file hệ thống, file tạm, hoặc chính folder đích
-        if ext in ['.tmp', '.crdownload'] or filename.startswith('.') or os.path.isdir(file_path):
-            return
+        ext = ext.lower()
 
-        destination_folder = "Others" # Mặc định
-        
-        # Tìm folder đích dựa trên đuôi file
-        for category, extensions in FILE_CATEGORIES.items():
-            if ext.lower() in extensions:
-                destination_folder = category
+        moved = False
+        for folder, extensions in self.folders.items():
+            if ext in extensions:
+                destination_dir = os.path.join(self.base_dir, folder)
+                
+                # 1. Tạo tên duy nhất để tránh ghi đè
+                unique_filename = self.get_unique_name(destination_dir, filename)
+                destination_path = os.path.join(destination_dir, unique_filename)
+                
+                try:
+                    # 2. Di chuyển file
+                    shutil.move(file_path, destination_path)
+                    print(f"[OK] Đã chuyển: {filename} -> {folder}/{unique_filename}")
+                    moved = True
+                except Exception as e:
+                    print(f"[ERROR] Lỗi khi chuyển {filename}: {e}")
                 break
-        
-        # Tạo đường dẫn đích
-        dest_path = os.path.join(self.source_dir, destination_folder)
-        if not os.path.exists(dest_path):
-            os.makedirs(dest_path)
-
-        # Xử lý trùng tên (Thêm timestamp)
-        final_path = os.path.join(dest_path, filename)
-        if os.path.exists(final_path):
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            final_path = os.path.join(dest_path, f"{name}_{timestamp}{ext}")
-
-        # Thực hiện di chuyển
-        try:
-            # Chờ 1 chút để đảm bảo file không bị lock bởi tiến trình khác
-            shutil.move(file_path, final_path)
-            log_msg = f"SUCCESS: Moved '{filename}' to '{destination_folder}'"
-            print(log_msg)
-            logging.info(log_msg)
-        except Exception as e:
-            err_msg = f"ERROR: Could not move '{filename}'. Reason: {str(e)}"
-            print(err_msg)
-            logging.error(err_msg)
-            
+                
+        if not moved:
+             other_dir = os.path.join(self.base_dir, "Others")
+             if not os.path.exists(other_dir): os.makedirs(other_dir)
+             shutil.move(file_path, os.path.join(other_dir, self.get_unique_name(other_dir, filename)))
